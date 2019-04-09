@@ -1,0 +1,97 @@
+<workflow-app name="HDFS_TO_BODS" xmlns="uri:oozie:workflow:0.4">
+
+<global>
+<job-xml>hdfs://PRODha/user/<<user>>/qa/hive-site.xml</job-xml>
+</global>
+<credentials>
+<credential name="hcat_auth" type="hcat">
+<property>
+    <name>hcat.metastore.uri</name>
+    <value>${hcat_metastore_uri}</value>
+</property>
+<property>
+    <name>hcat.metastore.principal</name>
+    <value>${hcat_metastore_principal}</value>
+</property>
+</credential>
+</credentials>
+
+<start to="HIVE_SALES_TO_STG" />
+
+<action name="HIVE_SALES_TO_STG" cred='hcat_auth'>
+   <hive xmlns="uri:oozie:hive-action:0.2">
+        <job-tracker>${jobTracker}</job-tracker>
+        <name-node>${nameNode}</name-node>
+        <script>orders_to_stg.hql</script>
+   </hive>
+    <ok to="FORK_EXPORT_TO_BODS"/>
+    <error to="kill-email"/>
+</action>
+
+<fork name="FORK_EXPORT_TO_BODS">
+    <path start="SQOOP_SALES_EXPORT_TO_BODS" />
+    <path start="SQOOP_RTN_EXPORT_TO_BODS" />
+</fork>
+
+<action name="SQOOP_SALES_EXPORT_TO_BODS" cred='hcat_auth'>
+   <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+        <job-tracker>${jobTracker}</job-tracker>
+        <name-node>${nameNode}</name-node>
+        <configuration>
+            <property>
+                <name>mapred.job.queue.name</name>
+                <value>${queueName}</value>
+            </property>
+            <property>
+                <name>oozie.action.sharelib.for.sqoop</name> 
+                <value>sqoop,hive,hcatalog</value> 
+            </property>
+        </configuration>
+	<command>export --libjars ${nameNode}/user/<<user>>/qa/sqljdbc42.jar --connect "jdbc:sqlserver://<<server_name>>.<<domain>>.com:<<port>>;database=staging_retail;" --username sqlgeorgeqa --password   --hcatalog-database<<db_name>>--hcatalog-table stg_qa_sales_orders --table sales_orders --columns order_id,dt --num-mappers 10 --verbose -- --schema <<schema_name>></command>
+        <file>hive-site.xml</file>
+        <file>sqljdbc42.jar</file>
+    </sqoop>
+    <ok to="JOIN_FORK_TO_BODS"/>
+    <error to="kill-email"/>
+</action>
+
+<action name="SQOOP_RTN_EXPORT_TO_BODS" cred='hcat_auth'>
+   <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+        <job-tracker>${jobTracker}</job-tracker>
+        <name-node>${nameNode}</name-node>
+        <configuration>
+            <property>
+                <name>mapred.job.queue.name</name>
+                <value>${queueName}</value>
+            </property>
+            <property>
+                <name>oozie.action.sharelib.for.sqoop</name>
+                <value>sqoop,hive,hcatalog</value>
+            </property>
+        </configuration>
+        <command>export --libjars ${nameNode}/user/<<user>>/qa/sqljdbc42.jar --connect "jdbc:sqlserver://<<server_name>>.<<domain>>.com:<<port>>;database=staging_retail;" --username sqlgeorgeqa --password   --hcatalog-database<<db_name>>--hcatalog-table stg_qa_return_orders --table return_orders --columns order_id,dt --num-mappers 10 --verbose -- --schema <<schema_name>></command>
+        <file>hive-site.xml</file>
+        <file>sqljdbc42.jar</file>
+    </sqoop>
+    <ok to="JOIN_FORK_TO_BODS"/>
+    <error to="kill-email"/>
+</action>
+
+<join name="JOIN_FORK_TO_BODS" to="end" />
+
+<action name="kill-email">
+  <email xmlns="uri:oozie:email-action:0.1">
+    <to><<email_address>>@<<domain>>.com</to>
+    <cc><<email_address>>@<<domain>>.com</cc>
+    <subject>WF ${wf:id()} failed</subject>
+    <body>Process failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</body>
+  </email>
+<ok to="kill"/>
+<error to="kill"/>
+</action>
+
+<kill name="kill">
+    <message>Process failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+</kill>
+<end name="end"/>
+</workflow-app>
