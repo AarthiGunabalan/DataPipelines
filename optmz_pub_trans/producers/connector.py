@@ -33,7 +33,7 @@ def configure_connector():
     # Make sure to think about what an appropriate topic prefix would be, and how frequently Kafka
     # Connect should run this connector (hint: not very often!)
     logger.info("connector code not completed skipping connector creation")
-    resp = requests.put(
+    resp = requests.post(
         KAFKA_CONNECT_URL,
         headers={"Content-Type": "application/json"},
         data=json.dumps({
@@ -46,7 +46,7 @@ def configure_connector():
                 "value.converter.schemas.enable": "false",
                 "batch.max.rows": "500",
     #            # TODO
-                "connection.url": "jdbc:postgresql://postgres:5432/cta",
+                "connection.url": "jdbc:postgresql://localhost:5432/cta",
     #            # TODO
                 "connection.user": "cta_admin",
     #            # TODO
@@ -65,8 +65,13 @@ def configure_connector():
     )
 
     ## Ensure a healthy response was given
-    resp.raise_for_status()
-    logging.debug("connector created successfully")
+    try:
+        resp.raise_for_status()
+        logging.debug("connector created successfully")
+        
+    except requests.HTTPError as e:
+        logging.error(f"Error creating connector {CONNECTOR_NAME} : {e}")
+        raise
 
 
 if __name__ == "__main__":
