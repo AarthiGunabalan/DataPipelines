@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 # Faust will ingest records from Kafka in this format
+
 class Station(faust.Record):
     stop_id: int
     direction_id: str
@@ -22,6 +23,7 @@ class Station(faust.Record):
 
 
 # Faust will produce records to Kafka in this format
+
 class TransformedStation(faust.Record):
     station_id: int
     station_name: str
@@ -33,13 +35,13 @@ class TransformedStation(faust.Record):
 #   places it into a new topic with only the necessary information.
 app = faust.App("stations-stream", broker="kafka://localhost:9092", store="memory://")
 # TODO: Define the input Kafka Topic. Hint: What topic did Kafka Connect output to?
- topic = app.topic("org.chicago.cta.stations", value_type=Station)
+topic = app.topic("org.chicago.cta.stations", value_type=Station)
 # TODO: Define the output Kafka Topic
- out_topic = app.topic("org.chicago.cta.stations.transformed", partitions=1)
+out_topic = app.topic("org.chicago.cta.stations.transformed", partitions=1)
 # TODO: Define a Faust Table
-table = app.Table(
+transformed_station = app.Table(
     "TransformedStation",
-    default=int,
+    default=str,
     partitions=1,
     changelog_topic=out_topic,
 )
@@ -58,14 +60,9 @@ async def stationevent(stations):
     # TODO: Group By URI
     #       See: https://faust.readthedocs.io/en/latest/userguide/streams.html#group-by-repartition-the-stream
     #
-    async for s in stations:
-        #
-        # TODO: Use the URI as key, and add the number for each click event. Print the updated
-        #       entry for each key so you can see how the table is changing.
-        #       See: https://faust.readthedocs.io/en/latest/userguide/tables.html#basics
-        #
-        table[s.] += ce.number
-        print(f"{ce.uri}:{uri_summary_table[ce.uri]}")
+    async for station in stations:
+        transformed_station[station.station_id] == "red" if station.red == True else "blue" if station.blue == True else "green"
+        print(f"{station.station_id}:{transformed_station[station.station_id]}")
 
 if __name__ == "__main__":
     app.main()
