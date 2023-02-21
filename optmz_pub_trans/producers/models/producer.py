@@ -38,7 +38,9 @@ class Producer:
         #
         #
         self.broker_properties = {
-            "bootstrap.servers" : "localhost:9092"
+            "bootstrap.servers" : "localhost:9092",
+            "group.id" : "udacity",
+            #"schema.registry.url" : "http://localhost:8081"
         }
 
         # If the topic does not already exist, try to create it
