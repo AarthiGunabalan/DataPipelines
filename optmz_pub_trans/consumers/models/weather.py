@@ -21,3 +21,5 @@ class Weather:
         # TODO: Process incoming weather messages. Set the temperature and status.
         #
         #
+        self.temperature = message[temperature]
+        self.status = message[status]
