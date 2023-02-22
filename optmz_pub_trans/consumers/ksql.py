@@ -27,13 +27,13 @@ CREATE TABLE turnstile (
     station_name varchar,
     line varchar
 ) WITH (
-    KAFKA_TOPIC = f"turnstile_{station_name}",
-    VALUE_FORMAT = "JSON",
-    KEY = "station_id"
+    KAFKA_TOPIC = 'cta_stations_turnstile',
+    VALUE_FORMAT = 'AVRO',
+    KEY = 'station_id'
 );
 
 CREATE TABLE turnstile_summary
-WITH (???) AS
+WITH (VALUE_FORMAT = 'JSON') AS
     SELECT station_id, count(station_id) as `count`
     FROM turnstile 
     GROUP BY station_id;
@@ -43,8 +43,10 @@ WITH (???) AS
 def execute_statement():
     """Executes the KSQL statement against the KSQL API"""
     if topic_check.topic_exists("TURNSTILE_SUMMARY") is True:
+        print("In here")
         return
 
+    print("here")
     logging.debug("executing ksql statement...")
 
     resp = requests.post(
@@ -59,8 +61,12 @@ def execute_statement():
     )
 
     # Ensure that a 2XX status code was returned
-    resp.raise_for_status()
-
+    try: 
+        s_code = resp.raise_for_status()
+        print(s_code)
+    except requests.HTTPError as e:
+        logger.error(f"Error: {e}")
 
 if __name__ == "__main__":
+    print ("here")
     execute_statement()

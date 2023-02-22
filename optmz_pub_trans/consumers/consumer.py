@@ -55,7 +55,7 @@ class KafkaConsumer:
         # how the `on_assign` callback should be invoked.
         #
         #
-        self.consumer.subscribe([self.topic_name_pattern],on_assign=on_assign)
+        self.consumer.subscribe([self.topic_name_pattern])
 
     def on_assign(self, consumer, partitions):
         """Callback for when topic assignment takes place"""
@@ -110,4 +110,4 @@ class KafkaConsumer:
         # TODO: Cleanup the kafka consumer
         #
         #
-        self.flush()
+        self.close()

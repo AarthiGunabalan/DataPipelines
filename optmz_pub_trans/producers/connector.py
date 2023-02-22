@@ -32,7 +32,7 @@ def configure_connector():
     # using incrementing mode, with `stop_id` as the incrementing column name.
     # Make sure to think about what an appropriate topic prefix would be, and how frequently Kafka
     # Connect should run this connector (hint: not very often!)
-    logger.info("connector code not completed skipping connector creation")
+    logger.info(f"connector created: {CONNECTOR_NAME}")
     resp = requests.post(
         KAFKA_CONNECT_URL,
         headers={"Content-Type": "application/json"},
@@ -52,12 +52,12 @@ def configure_connector():
     #            # TODO
                 "connection.password": "chicago",
     #            # TODO
-                "table.whitelist": "CONNECTOR_NAME",
+                "table.whitelist": f"{CONNECTOR_NAME}",
     #            # TODO
                 "mode": "incrementing",
     #            # TODO
                 "incrementing.column.name": "stop_id",
-                "topic.prefix": "org.chicago.cta.stations",
+                "topic.prefix": "connect.stations-",
     #            # TODO
                 "poll.interval.ms": "120000",
             }
