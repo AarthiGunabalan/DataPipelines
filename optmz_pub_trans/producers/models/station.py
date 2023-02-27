@@ -44,8 +44,8 @@ class Station(Producer):
             topic_name,
             key_schema=Station.key_schema,
             value_schema=Station.value_schema, # TODO: Uncomment once schema is defined
-            num_partitions=1,
-            num_replicas=1,
+            num_partitions=3,
+            num_replicas=3,
         )
 
         self.station_id = int(station_id)
@@ -73,7 +73,7 @@ class Station(Producer):
                 "station_id" : self.station_id,
                 "train_id" : train.train_id,
                 "direction" : direction,
-                "line" : "",
+                "line" : self.color.name,
                 "train_status" : train.status,
                 "prev_station_id" : prev_station_id,
                 "prev_direction" : prev_direction

@@ -3,6 +3,8 @@ import logging
 
 import faust
 
+import json
+
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +63,19 @@ async def stationevent(stations):
     #       See: https://faust.readthedocs.io/en/latest/userguide/streams.html#group-by-repartition-the-stream
     #
     async for station in stations:
-        transformed_station[station.station_id] == "red" if station.red == True else "blue" if station.blue == True else "green"
-        print(f"{station.station_id}:{transformed_station[station.station_id]}")
+        t_station_id = station.station_id
+        t_station_name = station.station_name
+        t_order = station.order
+        t_line = "red" if station.red == True else "blue" if station.blue == True else "green"
+        
+        t_station = {"station_id":t_station_id,
+                    "station_name":t_station_name,
+                    "order":t_order,
+                    "line":t_line}
+        
+        
+        await out_topic.send(value=t_station)
+       
 
 if __name__ == "__main__":
     app.main()

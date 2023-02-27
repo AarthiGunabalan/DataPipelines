@@ -41,7 +41,7 @@ class Weather(Producer):
             topic_name = "org.chicago.cta.weather.v1",
             key_schema=Weather.key_schema,
             value_schema=Weather.value_schema,
-            num_partitions=1,
+            num_partitions=30,
             num_replicas=1,
         )
 
@@ -102,7 +102,7 @@ class Weather(Producer):
                                     }
                     ]
                 }
-            ),
+            )
         )
         resp.raise_for_status()
         logger.debug(

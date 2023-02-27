@@ -67,7 +67,7 @@ def run_server():
     consumers = [
         KafkaConsumer(
             "org.chicago.cta.weather.v1",
-            weather_model.process_message,
+            message_handler=weather_model.process_message,
             offset_earliest=True,
         ),
         KafkaConsumer(
@@ -77,7 +77,7 @@ def run_server():
             is_avro=False,
         ),
         KafkaConsumer(
-            "^org.chicago.cta.station.arrivals.",
+            "^org.chicago.cta.station.arrivals.*",
             lines.process_message,
             offset_earliest=True,
         ),
@@ -86,7 +86,7 @@ def run_server():
             lines.process_message,
             offset_earliest=True,
             is_avro=False,
-        ),
+        )
     ]
 
     try:
@@ -95,6 +95,7 @@ def run_server():
             "If running locally - Open a web browser to http://localhost:3000 to see the Transit Status Page"
         )
         for consumer in consumers:
+            print("Inside tornado")
             tornado.ioloop.IOLoop.current().spawn_callback(consumer.consume)
 
         tornado.ioloop.IOLoop.current().start()
@@ -107,3 +108,28 @@ def run_server():
 
 if __name__ == "__main__":
     run_server()
+
+"""
+        KafkaConsumer(
+            "org.chicago.cta.weather.v1",
+            message_handler=weather_model.process_message,
+            offset_earliest=True,
+        ),
+        KafkaConsumer(
+            "org.chicago.cta.stations.table.v1",
+            lines.process_message,
+            offset_earliest=True,
+            is_avro=False,
+        ),
+        KafkaConsumer(
+            "org.chicago.cta.station.arrivals.47th",
+            lines.process_message,
+            offset_earliest=True,
+        ),
+        KafkaConsumer(
+            "TURNSTILE_SUMMARY",
+            lines.process_message,
+            offset_earliest=True,
+            is_avro=False,
+        ),
+"""

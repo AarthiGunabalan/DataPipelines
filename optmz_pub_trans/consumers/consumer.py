@@ -38,7 +38,8 @@ class KafkaConsumer:
         #
         self.broker_properties = {
             "bootstrap.servers" : "localhost:9092",
-            "group.id" : "0"
+            "group.id" : "0",
+            "auto.offset.reset":"earliest"
         }
 
         # TODO: Create the Consumer, using the appropriate type.
@@ -49,58 +50,57 @@ class KafkaConsumer:
             self.consumer = Consumer(self.broker_properties)
             
 
-        #
-        #
         # TODO: Configure the AvroConsumer and subscribe to the topics. Make sure to think about
         # how the `on_assign` callback should be invoked.
-        #
-        #
-        self.consumer.subscribe([self.topic_name_pattern])
+        
+        self.consumer.subscribe([self.topic_name_pattern], on_assign=self.on_assign)
 
     def on_assign(self, consumer, partitions):
         """Callback for when topic assignment takes place"""
         # TODO: If the topic is configured to use `offset_earliest` set the partition offset to
         # the beginning or earliest
-        logger.info("on_assign is incomplete - skipping")
+        
+        logger.warn("on_assign is now complete")
+        
+        print(f"{self.topic_name_pattern}")
+
         for partition in partitions:
             partition.offset = OFFSET_EARLIEST
-            #
-            #
-            # TODO
-            #
-            #
 
-        logger.info("partitions assigned for %s", self.topic_name_pattern)
-        consumer.assign(partitions)
+        logger.warn("partitions assigned for %s", self.topic_name_pattern)
+
+        consumer.assign(partitions)      
+         
 
     async def consume(self):
         """Asynchronously consumes data from kafka topic"""
+        print("Inside consume")
         while True:
             num_results = 1
             while num_results > 0:
-                num_results = self._consume()
+                num_results = self._consume() 
             await gen.sleep(self.sleep_secs)
 
     def _consume(self):
         """Polls for a message. Returns 1 if a message was received, 0 otherwise"""
-        #
-        #
         # TODO: Poll Kafka for messages. Make sure to handle any errors or exceptions.
         # Additionally, make sure you return 1 when a message is processed, and 0 when no message
         # is retrieved.
-        #
-        #
-        ret_cd = 0
-        while True:
-            msg = self.poll(1.0)
-            if msg is None:
-                ret_cd = 0
-            else:
-                ret_cd = 1
-                
-                
-        logger.info("_consume is incomplete - skipping")
-        return ret_cd
+        print(f"Inside _consume {self.topic_name_pattern}")
+        
+        try:
+            message = self.consumer.poll(1.0)
+        except Exception:
+            logger.info(f'Error while polling')
+        if message is None:
+            print("no message received by consumer, topic:{}".format(self.topic_name_pattern))
+            return 0
+        elif message.error():
+            print(f"error from consumer {message.error()}")
+        else:
+            self.message_handler(message)
+            print(f"consumed message {message.key()}: {message.value()}")
+            return 1
 
 
     def close(self):
